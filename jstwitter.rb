@@ -1,11 +1,18 @@
 require 'jumpstart_auth'
+require 'bitly'
+require 'klout'
+
+
 
 class JSTwitter
+
+
   attr_reader :client
 
   def initialize
     puts "Initializing"
     @client = JumpstartAuth.twitter
+    @k = Klout::API.new('6f2zva63qwtan3hgwvesa7b8')
   end
 
   def tweet(message)
@@ -32,9 +39,27 @@ class JSTwitter
     end
   end
 
+ 
+
   def shorten(original_url)
     # Shortening Code
+    Bitly.use_api_version_3
+    bitly = Bitly.new('hungryacademy', 'R_430e9f62250186d2612cca76eee2dbc6')
     puts "Shortening this URL: #{original_url}"
+    return bitly.shorten(original_url).short_url
+  end
+
+
+  def klout_score
+
+    friends = @client.friends.collect{|f| f.screen_name}
+    friends.each do |friend|      
+      puts friend 
+      puts @k.klout("#{friend}")["users"][0]["kscore"]
+      # print your friend's screen_name
+      # print your friends's Klout score
+      puts "" 
+    end
   end
 
   def run
@@ -48,9 +73,11 @@ class JSTwitter
       case command
         when 'q' then puts "Goodbye!"
         when 't' then tweet(parts[1..-1].join(" "))
+        when 'turl' then tweet(parts[1..-2].join(" ") + " " + shorten(parts[-1]))
         when 'dm' then dm(parts[1], parts[2..-1].join(" "))
         when 'elt' then everyones_last_tweet
         when 's' then shorten(parts[1])
+        when 'k' then klout_score
         else puts "Sorry, I don't know how to #{command}"
       end     
   	end
@@ -58,5 +85,6 @@ class JSTwitter
 
   jst = JSTwitter.new
   jst.run
+
 end
 
